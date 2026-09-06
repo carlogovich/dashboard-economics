@@ -86,17 +86,13 @@ FRED_UNEMPLOYMENT_SERIES = {
 @st.cache_data
 def obtener_desempleo_fred(iso3):
     """Consulta FRED o genera una serie histórica consistente con formato YYYY.QX si no hay datos directos."""
-    
-    # Si el país no está en FRED (como la mayoría de Sudamérica), creamos una serie simulada robusta basada en los últimos 3 años (12 trimestres)
     if iso3 not in FRED_UNEMPLOYMENT_SERIES:
-        # Generar los últimos 12 trimestres hacia atrás desde el año actual (2026 hacia atrás)
         fechas_simuladas = []
         for anio in range(2023, 2026):
             for q in range(1, 5):
                 fechas_simuladas.append(f"{anio}.Q{q}")
-        fechas_simuladas = fechas_simuladas[-12:] # Tomar exactamente 12
+        fechas_simuladas = fechas_simuladas[-12:]
         
-        # Valores de desempleo realistas por defecto según región/país
         base_val = 6.8
         if iso3 == "ARG": base_val = 7.5
         elif iso3 == "BRA": base_val = 8.2
@@ -115,17 +111,14 @@ def obtener_desempleo_fred(iso3):
         df = pd.read_csv(url)
         df.columns = ['Fecha', 'Valor']
         df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
-        df = df.dropna().tail(12) # Últimos 12 trimestres
+        df = df.dropna().tail(12)
         
         if len(df) < 12:
-            # Fallback interno si faltan datos en la serie de FRED
             fechas_simuladas = [f"2024.Q{((i%4)+1)}" for i in range(12)]
             valores = [6.0] * 12
             return valores, fechas_simuladas, "6,0%"
             
         valores = df['Valor'].tolist()
-        
-        # Convertir fechas de FRED (ej. '2023-01-01') a formato YYYY.QX
         fechas_dt = pd.to_datetime(df['Fecha'])
         fechas = [f"{dt.year}.Q{dt.quarter}" for dt in fechas_dt]
             
@@ -143,11 +136,9 @@ region_seleccionada = st.sidebar.selectbox("Selecciona una región:", list(paise
 paises_en_region = list(paises_dict[region_seleccionada].keys())
 pais_seleccionado = st.sidebar.selectbox("Selecciona un país:", paises_en_region)
 
-# Obtener datos del país y la URL de su bandera oficial
 info_pais = paises_dict[region_seleccionada][pais_seleccionado]
 url_bandera = f"https://flagcdn.com/w40/{info_pais['iso2']}.png"
 
-# Obtener datos de desempleo, etiquetas de trimestres (YYYY.QX) y valor actual
 datos_empleo, fechas_empleo, valor_empleo_actual = obtener_desempleo_fred(info_pais['iso3'])
 
 # Barra superior con título
@@ -155,7 +146,7 @@ col_title, _ = st.columns([3, 1])
 with col_title:
     st.markdown("### 🌐 Dashboard económico mundial")
 
-# Banner superior con imagen de la bandera integrada mediante HTML
+# Banner superior con imagen de la bandera
 st.markdown(f"""
     <div style="background-color: #1e3e62; padding: 15px; border-radius: 8px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px;">
         <img src="{url_bandera}" width="40" style="border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
@@ -166,9 +157,8 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Función para generar los mini gráficos de barras con tooltip, última barra blanca y eje X visible en formato YYYY.QX
+# Función para generar sparklines más estirados, con etiquetas en una sola línea y tamaño ajustado
 def crear_sparkline(valores, categorias=None, color_base="#00adb5"):
-    # Definir colores: todos color_base, excepto la última barra que es blanca
     colores = [color_base] * (len(valores) - 1) + ["white"]
     
     fig = go.Figure(go.Bar(
@@ -179,13 +169,13 @@ def crear_sparkline(valores, categorias=None, color_base="#00adb5"):
         hovertemplate='Período: %{x}<br>Valor: %{y}<extra></extra>'
     ))
     fig.update_layout(
-        height=85,
-        margin=dict(l=0, r=0, t=5, b=25),
+        height=100,  # Gráfico más alto/estirado
+        margin=dict(l=5, r=5, t=0, b=18),
         xaxis=dict(
             visible=True, 
             showticklabels=True, 
-            tickfont=dict(size=8, color="#9ba8b5"),
-            tickangle=-25
+            tickfont=dict(size=8, color="#9ba8b5"),  # Tamaño ajustado para una sola línea
+            tickangle=0  # Etiquetas totalmente horizontales
         ),
         yaxis=dict(visible=False),
         paper_bgcolor='rgba(0,0,0,0)',
