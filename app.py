@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 # Configuración general de la página en modo ancho
 st.set_page_config(page_title="Dashboard Económico Mundial", layout="wide")
 
-# Estilos CSS personalizados para simular el panel oscuro y las tarjetas
+# Estilos CSS personalizados para el panel oscuro y las tarjetas
 st.markdown("""
     <style>
     .stApp {
@@ -21,75 +21,73 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 1. Diccionario completo de países agrupados con sus códigos ISO
+# Diccionario completo de países agrupados con sus códigos ISO
 paises_dict = {
     "Norteamérica": {
-        "Estados Unidos": {"iso2": "US", "iso3": "USA"},
-        "Canadá": {"iso2": "CA", "iso3": "CAN"},
-        "México": {"iso2": "MX", "iso3": "MEX"}
+        "Estados Unidos": {"iso2": "us", "iso3": "USA"},
+        "Canadá": {"iso2": "ca", "iso3": "CAN"},
+        "México": {"iso2": "mx", "iso3": "MEX"}
     },
     "Sudamérica": {
-        "Brasil": {"iso2": "BR", "iso3": "BRA"},
-        "Argentina": {"iso2": "AR", "iso3": "ARG"},
-        "Colombia": {"iso2": "CO", "iso3": "COL"},
-        "Chile": {"iso2": "CL", "iso3": "CHL"},
-        "Perú": {"iso2": "PE", "iso3": "PER"},
-        "Ecuador": {"iso2": "EC", "iso3": "ECU"},
-        "Uruguay": {"iso2": "UY", "iso3": "URY"},
-        "Bolivia": {"iso2": "BO", "iso3": "BOL"},
-        "Paraguay": {"iso2": "PY", "iso3": "PRY"},
-        "Venezuela": {"iso2": "VE", "iso3": "VEN"}
+        "Brasil": {"iso2": "br", "iso3": "BRA"},
+        "Argentina": {"iso2": "ar", "iso3": "ARG"},
+        "Colombia": {"iso2": "co", "iso3": "COL"},
+        "Chile": {"iso2": "cl", "iso3": "CHL"},
+        "Perú": {"iso2": "pe", "iso3": "PER"},
+        "Ecuador": {"iso2": "ec", "iso3": "ECU"},
+        "Uruguay": {"iso2": "uy", "iso3": "URY"},
+        "Bolivia": {"iso2": "bo", "iso3": "BOL"},
+        "Paraguay": {"iso2": "py", "iso3": "PRY"},
+        "Venezuela": {"iso2": "ve", "iso3": "VEN"}
     },
     "Europa": {
-        "Alemania": {"iso2": "DE", "iso3": "DEU"},
-        "Reino Unido": {"iso2": "GB", "iso3": "GBR"},
-        "Francia": {"iso2": "FR", "iso3": "FRA"},
-        "Italia": {"iso2": "IT", "iso3": "ITA"},
-        "España": {"iso2": "ES", "iso3": "ESP"},
-        "Países Bajos": {"iso2": "NL", "iso3": "NLD"},
-        "Suiza": {"iso2": "CH", "iso3": "CHE"},
-        "Croacia": {"iso2": "HR", "iso3": "HRV"}
+        "Alemania": {"iso2": "de", "iso3": "DEU"},
+        "Reino Unido": {"iso2": "gb", "iso3": "GBR"},
+        "Francia": {"iso2": "fr", "iso3": "FRA"},
+        "Italia": {"iso2": "it", "iso3": "ITA"},
+        "España": {"iso2": "es", "iso3": "ESP"},
+        "Países Bajos": {"iso2": "nl", "iso3": "NLD"},
+        "Suiza": {"iso2": "ch", "iso3": "CHE"},
+        "Croacia": {"iso2": "hr", "iso3": "HRV"}
     },
     "Asia": {
-        "China": {"iso2": "CN", "iso3": "CHN"},
-        "Japón": {"iso2": "JP", "iso3": "JPN"},
-        "India": {"iso2": "IN", "iso3": "IND"},
-        "Corea del Sur": {"iso2": "KR", "iso3": "KOR"},
-        "Singapur": {"iso2": "SG", "iso3": "SGP"},
-        "Taiwán": {"iso2": "TW", "iso3": "TWN"}
+        "China": {"iso2": "cn", "iso3": "CHN"},
+        "Japón": {"iso2": "jp", "iso3": "JPN"},
+        "India": {"iso2": "in", "iso3": "IND"},
+        "Corea del Sur": {"iso2": "kr", "iso3": "KOR"},
+        "Singapur": {"iso2": "sg", "iso3": "SGP"},
+        "Taiwán": {"iso2": "tw", "iso3": "TWN"}
     },
     "Oceanía": {
-        "Australia": {"iso2": "AU", "iso3": "AUS"},
-        "Nueva Zelanda": {"iso2": "NZ", "iso3": "NZL"}
+        "Australia": {"iso2": "au", "iso3": "AUS"},
+        "Nueva Zelanda": {"iso2": "nz", "iso3": "NZL"}
     }
 }
 
-# Función para convertir código ISO en emoji de bandera
-def obtener_bandera(iso2):
-    return ''.join(chr(127397 + ord(c)) for c in iso2.upper())
-
-# Barra lateral para navegación por región y país
+# Barra lateral para navegación
 st.sidebar.header("Parámetros de Consulta")
 region_seleccionada = st.sidebar.selectbox("Selecciona una región:", list(paises_dict.keys()))
 
-# Lista de países según la región elegida
 paises_en_region = list(paises_dict[region_seleccionada].keys())
 pais_seleccionado = st.sidebar.selectbox("Selecciona un país:", paises_en_region)
 
-# Obtener los datos del país seleccionado
+# Obtener datos del país y la URL de su bandera oficial
 info_pais = paises_dict[region_seleccionada][pais_seleccionado]
-bandera = obtener_bandera(info_pais["iso2"])
+url_bandera = f"https://flagcdn.com/w40/{info_pais['iso2']}.png"
 
 # Barra superior con título
 col_title, _ = st.columns([3, 1])
 with col_title:
     st.markdown("### 🌐 Dashboard económico mundial")
 
-# Banner superior dinámico con el país y su bandera
+# Banner superior con imagen de la bandera integrada mediante HTML
 st.markdown(f"""
-    <div style="background-color: #1e3e62; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
-        <h4 style="margin:0; color:white;">{bandera} {pais_seleccionado} <span style="font-size: 14px; color: #9ba8b5;">(Código ISO: {info_pais['iso3']})</span></h4>
-        <p style="margin:0; color:#9ba8b5; font-size: 14px;">Datos de referencia, valores ilustrativos</p>
+    <div style="background-color: #1e3e62; padding: 15px; border-radius: 8px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px;">
+        <img src="{url_bandera}" width="40" style="border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+        <div>
+            <h4 style="margin:0; color:white;">{pais_seleccionado} <span style="font-size: 14px; color: #9ba8b5;">({info_pais['iso3'].upper()})</span></h4>
+            <p style="margin:0; color:#9ba8b5; font-size: 14px;">Datos de referencia, valores ilustrativos</p>
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -131,7 +129,6 @@ for i in range(0, len(indicadores), 3):
         if i + j < len(indicadores):
             ind = indicadores[i + j]
             with cols[j]:
-                # Tarjeta contenedora con HTML/CSS
                 st.markdown(f"""
                     <div class="metric-card">
                         <div style="color: #9ba8b5; font-size: 13px; font-weight: 500;">{ind['titulo']}</div>
@@ -140,6 +137,5 @@ for i in range(0, len(indicadores), 3):
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Gráfico miniatura incrustado
                 fig = crear_sparkline(ind['datos'])
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
