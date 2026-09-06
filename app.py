@@ -15,7 +15,7 @@ st.markdown("""
     .metric-card {
         background-color: #1e3e62;
         border-radius: 10px;
-        padding: 12px 15px;
+        padding: 8px 12px;
         margin-bottom: 0px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
@@ -147,16 +147,16 @@ with col_title:
 
 # Banner superior con imagen de la bandera
 st.markdown(f"""
-    <div style="background-color: #1e3e62; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
-        <img src="{url_bandera}" width="35" style="border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <div style="background-color: #1e3e62; padding: 10px 15px; border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+        <img src="{url_bandera}" width="30" style="border-radius: 3px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
         <div>
-            <h4 style="margin:0; color:white;">{pais_seleccionado} <span style="font-size: 14px; color: #9ba8b5;">({info_pais['iso3'].upper()})</span></h4>
-            <p style="margin:0; color:#9ba8b5; font-size: 13px;">Datos conectados a FRED y referencias ilustrativas</p>
+            <h4 style="margin:0; color:white; font-size: 16px;">{pais_seleccionado} <span style="font-size: 12px; color: #9ba8b5;">({info_pais['iso3'].upper()})</span></h4>
+            <p style="margin:0; color:#9ba8b5; font-size: 11px;">Datos conectados a FRED y referencias ilustrativas</p>
         </div>
     </div>
 """, unsafe_allow_html=True)
 
-# Función para generar sparklines más compactos (altura reducida a la mitad)
+# Función para el gráfico de barras (tamaño original de 100px para mantener la proporción)
 def crear_sparkline(valores, categorias=None, color_base="#00adb5"):
     colores = [color_base] * (len(valores) - 1) + ["white"]
     
@@ -168,7 +168,7 @@ def crear_sparkline(valores, categorias=None, color_base="#00adb5"):
         hovertemplate='Período: %{x}<br>Valor: %{y}<extra></extra>'
     ))
     fig.update_layout(
-        height=50,  # Altura reducida a la mitad (de 100 a 50)
+        height=100,  # Restaurado a su tamaño original
         margin=dict(l=5, r=5, t=0, b=12),
         xaxis=dict(
             visible=True, 
@@ -201,7 +201,7 @@ indicadores = [
     {"titulo": "Tasa de referencia", "valor": "40,0%", "desc": "Tasa de política monetaria", "datos": [20, 18, 16, 14, 12, 10, 8, 7, 6, 5, 4, 4], "cat": fechas_empleo}
 ]
 
-# Construcción de la cuadrícula de 3 columnas x 3 filas
+# Construcción de la cuadrícula de 3 columnas x 3 filas con la parte superior reducida a la mitad
 for i in range(0, len(indicadores), 3):
     cols = st.columns(3)
     for j in range(3):
@@ -210,9 +210,9 @@ for i in range(0, len(indicadores), 3):
             with cols[j]:
                 st.markdown(f"""
                     <div class="metric-card">
-                        <div style="color: #9ba8b5; font-size: 13px; font-weight: 500;">{ind['titulo']}</div>
-                        <div style="color: white; font-size: 22px; font-weight: bold; margin: 2px 0;">{ind['valor']}</div>
-                        <div style="color: #9ba8b5; font-size: 11px;">{ind['desc']}</div>
+                        <div style="color: #9ba8b5; font-size: 11px; font-weight: 500; margin-bottom: 0px;">{ind['titulo']}</div>
+                        <div style="color: white; font-size: 18px; font-weight: bold; line-height: 1.1; margin: 2px 0;">{ind['valor']}</div>
+                        <div style="color: #9ba8b5; font-size: 10px; margin-top: 1px;">{ind['desc']}</div>
                     </div>
                 """, unsafe_allow_html=True)
                 
