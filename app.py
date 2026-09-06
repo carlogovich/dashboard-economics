@@ -21,19 +21,74 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Barra superior con título y selector de país
-col_title, col_select = st.columns([3, 1])
+# 1. Diccionario completo de países agrupados con sus códigos ISO
+paises_dict = {
+    "Norteamérica": {
+        "Estados Unidos": {"iso2": "US", "iso3": "USA"},
+        "Canadá": {"iso2": "CA", "iso3": "CAN"},
+        "México": {"iso2": "MX", "iso3": "MEX"}
+    },
+    "Sudamérica": {
+        "Brasil": {"iso2": "BR", "iso3": "BRA"},
+        "Argentina": {"iso2": "AR", "iso3": "ARG"},
+        "Colombia": {"iso2": "CO", "iso3": "COL"},
+        "Chile": {"iso2": "CL", "iso3": "CHL"},
+        "Perú": {"iso2": "PE", "iso3": "PER"},
+        "Ecuador": {"iso2": "EC", "iso3": "ECU"},
+        "Uruguay": {"iso2": "UY", "iso3": "URY"},
+        "Bolivia": {"iso2": "BO", "iso3": "BOL"},
+        "Paraguay": {"iso2": "PY", "iso3": "PRY"},
+        "Venezuela": {"iso2": "VE", "iso3": "VEN"}
+    },
+    "Europa": {
+        "Alemania": {"iso2": "DE", "iso3": "DEU"},
+        "Reino Unido": {"iso2": "GB", "iso3": "GBR"},
+        "Francia": {"iso2": "FR", "iso3": "FRA"},
+        "Italia": {"iso2": "IT", "iso3": "ITA"},
+        "España": {"iso2": "ES", "iso3": "ESP"},
+        "Países Bajos": {"iso2": "NL", "iso3": "NLD"},
+        "Suiza": {"iso2": "CH", "iso3": "CHE"},
+        "Croacia": {"iso2": "HR", "iso3": "HRV"}
+    },
+    "Asia": {
+        "China": {"iso2": "CN", "iso3": "CHN"},
+        "Japón": {"iso2": "JP", "iso3": "JPN"},
+        "India": {"iso2": "IN", "iso3": "IND"},
+        "Corea del Sur": {"iso2": "KR", "iso3": "KOR"},
+        "Singapur": {"iso2": "SG", "iso3": "SGP"},
+        "Taiwán": {"iso2": "TW", "iso3": "TWN"}
+    },
+    "Oceanía": {
+        "Australia": {"iso2": "AU", "iso3": "AUS"},
+        "Nueva Zelanda": {"iso2": "NZ", "iso3": "NZL"}
+    }
+}
+
+# Función para convertir código ISO en emoji de bandera
+def obtener_bandera(iso2):
+    return ''.join(chr(127397 + ord(c)) for c in iso2.upper())
+
+# Barra lateral para navegación por región y país
+st.sidebar.header("Parámetros de Consulta")
+region_seleccionada = st.sidebar.selectbox("Selecciona una región:", list(paises_dict.keys()))
+
+# Lista de países según la región elegida
+paises_en_region = list(paises_dict[region_seleccionada].keys())
+pais_seleccionado = st.sidebar.selectbox("Selecciona un país:", paises_en_region)
+
+# Obtener los datos del país seleccionado
+info_pais = paises_dict[region_seleccionada][pais_seleccionado]
+bandera = obtener_bandera(info_pais["iso2"])
+
+# Barra superior con título
+col_title, _ = st.columns([3, 1])
 with col_title:
     st.markdown("### 🌐 Dashboard económico mundial")
 
-with col_select:
-    paises = ["Argentina", "Brasil", "Perú", "Chile", "Estados Unidos", "Alemania", "Japón"]
-    pais_seleccionado = st.selectbox("País", paises, label_visibility="collapsed")
-
-# Banner superior del país
+# Banner superior dinámico con el país y su bandera
 st.markdown(f"""
     <div style="background-color: #1e3e62; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
-        <h4 style="margin:0; color:white;">🇦🇷 {pais_seleccionado}</h4>
+        <h4 style="margin:0; color:white;">{bandera} {pais_seleccionado} <span style="font-size: 14px; color: #9ba8b5;">(Código ISO: {info_pais['iso3']})</span></h4>
         <p style="margin:0; color:#9ba8b5; font-size: 14px;">Datos de referencia, valores ilustrativos</p>
     </div>
 """, unsafe_allow_html=True)
@@ -56,7 +111,7 @@ def crear_sparkline(valores, color="#00adb5"):
     )
     return fig
 
-# Definición de los 9 indicadores principales
+# Definición de los 9 indicadores macroeconómicos clave
 indicadores = [
     {"titulo": "PBI", "valor": "US$ 640.000 M", "desc": "Trimestral, en dólares", "datos": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]},
     {"titulo": "Déficit fiscal / PBI", "valor": "-3,4%", "desc": "Mensual, % del PBI", "datos": [5, 6, 7, 8, 9, 10, 11, 12, 13, 15]},
@@ -85,6 +140,6 @@ for i in range(0, len(indicadores), 3):
                     </div>
                 """, unsafe_allow_html=True)
                 
-                # Gráfico miniatura incrustado debajo del texto dentro de la misma columna
+                # Gráfico miniatura incrustado
                 fig = crear_sparkline(ind['datos'])
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
