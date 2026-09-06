@@ -359,10 +359,10 @@ def crear_sparkline(
             visible=True,
             showticklabels=True,
             tickfont=dict(
-                size=10,
+                size=12,
                 color="#9ba8b5"
             ),
-            tickangle=90
+            tickangle=30
         ),
 
         yaxis=dict(
