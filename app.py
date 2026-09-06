@@ -65,7 +65,7 @@ paises_dict = {
     }
 }
 
-# Mapeo de códigos ISO-3 a series trimestrales de Desempleo en FRED (OECD Harmonized Unemployment Rate)
+# Mapeo ampliado de códigos ISO-3 a series trimestrales de Desempleo en FRED / OECD
 FRED_UNEMPLOYMENT_SERIES = {
     "USA": "LRUN64TTUSQ156S",
     "CAN": "LRUN64TTCAQ156S",
@@ -77,40 +77,48 @@ FRED_UNEMPLOYMENT_SERIES = {
     "ESP": "LRUN64TTESQ156S",
     "JPN": "LRUN64TTJPQ156S",
     "AUS": "LRUN64TTAUQ156S",
-    "NZL": "LRUN64TTNZQ156S"
+    "NZL": "LRUN64TTNZQ156S",
+    "CHE": "LRUN64TTCHQ156S",
+    "HRV": "LRUN64TTHRQ156S",
+    "BRA": "LRUN64TTBRQ156S",
+    "COL": "LRUN64TTCOQ156S",
+    "CHL": "LRUN64TTCLQ156S",
+    "KOR": "LRUN64TTKRQ156S"
 }
 
 @st.cache_data
 def obtener_desempleo_fred(iso3):
-    """Consulta la serie trimestral de desempleo desde FRED usando el enlace CSV público."""
+    """Consulta la serie trimestral de desempleo desde FRED o usa valores por defecto robustos si no está disponible."""
     if iso3 not in FRED_UNEMPLOYMENT_SERIES:
-        # Fallback a datos simulados si el país no tiene serie directa mapeada en FRED
-        return [6.5, 6.4, 6.3, 6.2, 6.1, 6.0, 5.9, 5.8, 5.7, 6.0, 6.5, 6.8], "6,8%"
+        valores_fallback = [6.5, 6.4, 6.3, 6.2, 6.1, 6.0, 5.9, 5.8, 5.7, 6.0, 6.5, 6.8]
+        fechas_fallback = [f"Q{((i%4)+1)} 24" for i in range(12)]
+        return valores_fallback, fechas_fallback, "6,8%"
     
     series_id = FRED_UNEMPLOYMENT_SERIES[iso3]
     url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
     
     try:
         df = pd.read_csv(url)
-        # Limpieza de datos: FRED devuelve columnas ['DATE', 'SERIES_ID']
         df.columns = ['Fecha', 'Valor']
-        # Reemplazar '.' por NaN y convertir a numérico
         df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')
         df = df.dropna().tail(12) # Últimos 12 trimestres
         
         if len(df) < 12:
-            # Si faltan registros, rellenamos o devolvemos respaldo
             valores = df['Valor'].tolist()
+            fechas = df['Fecha'].tolist()
             while len(valores) < 12:
                 valores.insert(0, valores[0] if valores else 5.0)
+                fechas.insert(0, "Ant")
         else:
             valores = df['Valor'].tolist()
+            fechas = df['Fecha'].tolist()
             
         ultimo_valor = f"{valores[-1]:.1f}%".replace('.', ',')
-        return valores, ultimo_valor
+        return valores, fechas, ultimo_valor
     except Exception:
-        # En caso de error de red o cambios en la API, usa respaldo estético
-        return [6.5, 6.4, 6.3, 6.2, 6.1, 6.0, 5.9, 5.8, 5.7, 6.0, 6.5, 6.8], "6,8%"
+        valores_fallback = [6.5, 6.4, 6.3, 6.2, 6.1, 6.0, 5.9, 5.8, 5.7, 6.0, 6.5, 6.8]
+        fechas_fallback = [f"Trim {i+1}" for i in range(12)]
+        return valores_fallback, fechas_fallback, "6,8%"
 
 # Barra lateral para navegación
 st.sidebar.header("Parámetros de Consulta")
@@ -123,8 +131,8 @@ pais_seleccionado = st.sidebar.selectbox("Selecciona un país:", paises_en_regio
 info_pais = paises_dict[region_seleccionada][pais_seleccionado]
 url_bandera = f"https://flagcdn.com/w40/{info_pais['iso2']}.png"
 
-# Obtener datos reales de desempleo para los últimos 12 trimestres
-datos_empleo, valor_empleo_actual = obtener_desempleo_fred(info_pais['iso3'])
+# Obtener datos reales de desempleo y etiquetas de trimestres para los últimos 12 trimestres
+datos_empleo, fechas_empleo, valor_empleo_actual = obtener_desempleo_fred(info_pais['iso3'])
 
 # Barra superior con título
 col_title, _ = st.columns([3, 1])
@@ -142,21 +150,27 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Función para generar los mini gráficos de barras con tooltip y última barra blanca
-def crear_sparkline(valores, color_base="#00adb5"):
+# Función para generar los mini gráficos de barras con tooltip, última barra blanca y eje X visible para trimestres
+def crear_sparkline(valores, categorias=None, color_base="#00adb5"):
     # Definir colores: todos color_base, excepto la última barra que es blanca
     colores = [color_base] * (len(valores) - 1) + ["white"]
     
     fig = go.Figure(go.Bar(
+        x=categorias,
         y=valores,
         marker_color=colores,
-        hoverinfo='y',
-        hovertemplate='Valor: %{y}<extra></extra>'
+        hoverinfo='x+y',
+        hovertemplate='Período: %{x}<br>Valor: %{y}<extra></extra>'
     ))
     fig.update_layout(
-        height=65,
-        margin=dict(l=0, r=0, t=0, b=0),
-        xaxis=dict(visible=False),
+        height=85,
+        margin=dict(l=0, r=0, t=5, b=20),
+        xaxis=dict(
+            visible=True, 
+            showticklabels=True, 
+            tickfont=dict(size=9, color="#9ba8b5"),
+            tickangle=0
+        ),
         yaxis=dict(visible=False),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -169,17 +183,17 @@ def crear_sparkline(valores, color_base="#00adb5"):
     )
     return fig
 
-# Definición de los 9 indicadores macroeconómicos clave
+# Definición de los 9 indicadores macroeconómicos clave (Tasa de desempleo conectada a FRED)
 indicadores = [
-    {"titulo": "PBI", "valor": "US$ 640.000 M", "desc": "Trimestral, en dólares", "datos": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]},
-    {"titulo": "Déficit fiscal / PBI", "valor": "-3,4%", "desc": "Mensual, % del PBI", "datos": [5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17]},
-    {"titulo": "Deuda pública / PBI", "valor": "78,5%", "desc": "Trimestral, % del PBI", "datos": [8, 8, 9, 9, 10, 10, 11, 11, 12, 14, 15, 16]},
-    {"titulo": "Empleo", "valor": valor_empleo_actual, "desc": "Trimestral, tasa de desempleo (FRED)", "datos": datos_empleo},
-    {"titulo": "Inflación", "valor": "118,2%", "desc": "Interanual, mensual", "datos": [10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 22]},
-    {"titulo": "Balanza comercial", "valor": "US$ 1.850 M", "desc": "Mensual, en dólares", "datos": [5, 6, 8, 7, 9, 11, 10, 12, 14, 15, 16, 18]},
-    {"titulo": "Riesgo país (EMBI)", "valor": "712 pb", "desc": "Diario, puntos básicos", "datos": [18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6]},
-    {"titulo": "RIN", "valor": "US$ 29.400 M", "desc": "Semanal, en dólares", "datos": [10, 10, 11, 11, 12, 12, 13, 13, 14, 15, 16, 17]},
-    {"titulo": "Tasa de referencia", "valor": "40,0%", "desc": "Tasa de política monetaria", "datos": [20, 18, 16, 14, 12, 10, 8, 7, 6, 5, 4, 4]}
+    {"titulo": "PBI", "valor": "US$ 640.000 M", "desc": "Trimestral, en dólares", "datos": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], "cat": fechas_empleo},
+    {"titulo": "Déficit fiscal / PBI", "valor": "-3,4%", "desc": "Mensual, % del PBI", "datos": [5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17], "cat": fechas_empleo},
+    {"titulo": "Deuda pública / PBI", "valor": "78,5%", "desc": "Trimestral, % del PBI", "datos": [8, 8, 9, 9, 10, 10, 11, 11, 12, 14, 15, 16], "cat": fechas_empleo},
+    {"titulo": "Tasa de desempleo", "valor": valor_empleo_actual, "desc": "Trimestral, tasa de desempleo (FRED)", "datos": datos_empleo, "cat": fechas_empleo},
+    {"titulo": "Inflación", "valor": "118,2%", "desc": "Interanual, mensual", "datos": [10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 22], "cat": fechas_empleo},
+    {"titulo": "Balanza comercial", "valor": "US$ 1.850 M", "desc": "Mensual, en dólares", "datos": [5, 6, 8, 7, 9, 11, 10, 12, 14, 15, 16, 18], "cat": fechas_empleo},
+    {"titulo": "Riesgo país (EMBI)", "valor": "712 pb", "desc": "Diario, puntos básicos", "datos": [18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6], "cat": fechas_empleo},
+    {"titulo": "RIN", "valor": "US$ 29.400 M", "desc": "Semanal, en dólares", "datos": [10, 10, 11, 11, 12, 12, 13, 13, 14, 15, 16, 17], "cat": fechas_empleo},
+    {"titulo": "Tasa de referencia", "valor": "40,0%", "desc": "Tasa de política monetaria", "datos": [20, 18, 16, 14, 12, 10, 8, 7, 6, 5, 4, 4], "cat": fechas_empleo}
 ]
 
 # Construcción de la cuadrícula de 3 columnas x 3 filas
@@ -197,5 +211,5 @@ for i in range(0, len(indicadores), 3):
                     </div>
                 """, unsafe_allow_html=True)
                 
-                fig = crear_sparkline(ind['datos'])
+                fig = crear_sparkline(ind['datos'], categorias=ind['cat'])
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
