@@ -316,7 +316,7 @@ st.markdown(_html(banner_html), unsafe_allow_html=True)
 
 # ============================================================
 # FUNCIÓN PARA CREAR LOS GRÁFICOS
-# ALTURA = 140 PX
+# ALTURA = 200 PX
 # ============================================================
 
 def crear_sparkline(
@@ -346,7 +346,7 @@ def crear_sparkline(
 
     fig.update_layout(
 
-        height=140,
+        height=200,
 
         margin=dict(
             l=5,
@@ -359,10 +359,10 @@ def crear_sparkline(
             visible=True,
             showticklabels=True,
             tickfont=dict(
-                size=12,
+                size=10,
                 color="#9ba8b5"
             ),
-            tickangle=45
+            tickangle=90
         ),
 
         yaxis=dict(
