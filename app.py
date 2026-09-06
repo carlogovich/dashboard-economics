@@ -524,14 +524,14 @@ for i in range(0, len(indicadores), 3):
                 card_html = f"""
                 <div class="metric-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; white-space:nowrap;">
-                        <div style="color:#9ba8b5; font-size:11px; font-weight:500; overflow:hidden; text-overflow:ellipsis;">
+                        <div style="color:#9ba8b5; font-size:14px; font-weight:500; overflow:hidden; text-overflow:ellipsis;">
                             {ind["titulo"]}
                         </div>
                         <div style="color:white; font-size:16px; font-weight:bold; line-height:1;">
                             {ind["valor"]}
                         </div>
                     </div>
-                    <div style="color:#9ba8b5; font-size:9px; margin-top:3px;">
+                    <div style="color:#9ba8b5; font-size:14px; margin-top:3px;">
                         {ind["desc"]}
                     </div>
                 </div>
