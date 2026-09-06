@@ -362,7 +362,7 @@ def crear_sparkline(
                 size=12,
                 color="#9ba8b5"
             ),
-            tickangle=0
+            tickangle=45
         ),
 
         yaxis=dict(
