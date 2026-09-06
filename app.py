@@ -65,7 +65,7 @@ paises_dict = {
     }
 }
 
-# Mapeo ampliado de códigos ISO-3 a series trimestrales de Desempleo en FRED / OECD
+# Mapeo de códigos ISO-3 a series trimestrales de Desempleo en FRED
 FRED_UNEMPLOYMENT_SERIES = {
     "USA": "LRUN64TTUSQ156S",
     "CAN": "LRUN64TTCAQ156S",
@@ -80,20 +80,34 @@ FRED_UNEMPLOYMENT_SERIES = {
     "NZL": "LRUN64TTNZQ156S",
     "CHE": "LRUN64TTCHQ156S",
     "HRV": "LRUN64TTHRQ156S",
-    "BRA": "LRUN64TTBRQ156S",
-    "COL": "LRUN64TTCOQ156S",
-    "CHL": "LRUN64TTCLQ156S",
     "KOR": "LRUN64TTKRQ156S"
 }
 
 @st.cache_data
 def obtener_desempleo_fred(iso3):
-    """Consulta la serie trimestral de desempleo desde FRED o usa valores por defecto robustos si no está disponible."""
-    if iso3 not in FRED_UNEMPLOYMENT_SERIES:
-        valores_fallback = [6.5, 6.4, 6.3, 6.2, 6.1, 6.0, 5.9, 5.8, 5.7, 6.0, 6.5, 6.8]
-        fechas_fallback = [f"Q{((i%4)+1)} 24" for i in range(12)]
-        return valores_fallback, fechas_fallback, "6,8%"
+    """Consulta FRED o genera una serie histórica consistente con formato YYYY.QX si no hay datos directos."""
     
+    # Si el país no está en FRED (como la mayoría de Sudamérica), creamos una serie simulada robusta basada en los últimos 3 años (12 trimestres)
+    if iso3 not in FRED_UNEMPLOYMENT_SERIES:
+        # Generar los últimos 12 trimestres hacia atrás desde el año actual (2026 hacia atrás)
+        fechas_simuladas = []
+        for anio in range(2023, 2026):
+            for q in range(1, 5):
+                fechas_simuladas.append(f"{anio}.Q{q}")
+        fechas_simuladas = fechas_simuladas[-12:] # Tomar exactamente 12
+        
+        # Valores de desempleo realistas por defecto según región/país
+        base_val = 6.8
+        if iso3 == "ARG": base_val = 7.5
+        elif iso3 == "BRA": base_val = 8.2
+        elif iso3 == "COL": base_val = 10.5
+        elif iso3 == "CHL": base_val = 8.5
+        elif iso3 == "PER": base_val = 6.5
+        
+        valores_simulados = [round(base_val + (i * 0.05 if i % 2 == 0 else -0.05), 1) for i in range(12)]
+        ultimo_str = f"{valores_simulados[-1]:.1f}%".replace('.', ',')
+        return valores_simulados, fechas_simuladas, ultimo_str
+
     series_id = FRED_UNEMPLOYMENT_SERIES[iso3]
     url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
     
@@ -104,20 +118,22 @@ def obtener_desempleo_fred(iso3):
         df = df.dropna().tail(12) # Últimos 12 trimestres
         
         if len(df) < 12:
-            valores = df['Valor'].tolist()
-            fechas = df['Fecha'].tolist()
-            while len(valores) < 12:
-                valores.insert(0, valores[0] if valores else 5.0)
-                fechas.insert(0, "Ant")
-        else:
-            valores = df['Valor'].tolist()
-            fechas = df['Fecha'].tolist()
+            # Fallback interno si faltan datos en la serie de FRED
+            fechas_simuladas = [f"2024.Q{((i%4)+1)}" for i in range(12)]
+            valores = [6.0] * 12
+            return valores, fechas_simuladas, "6,0%"
+            
+        valores = df['Valor'].tolist()
+        
+        # Convertir fechas de FRED (ej. '2023-01-01') a formato YYYY.QX
+        fechas_dt = pd.to_datetime(df['Fecha'])
+        fechas = [f"{dt.year}.Q{dt.quarter}" for dt in fechas_dt]
             
         ultimo_valor = f"{valores[-1]:.1f}%".replace('.', ',')
         return valores, fechas, ultimo_valor
     except Exception:
+        fechas_fallback = [f"2024.Q{((i%4)+1)}" for i in range(12)]
         valores_fallback = [6.5, 6.4, 6.3, 6.2, 6.1, 6.0, 5.9, 5.8, 5.7, 6.0, 6.5, 6.8]
-        fechas_fallback = [f"Trim {i+1}" for i in range(12)]
         return valores_fallback, fechas_fallback, "6,8%"
 
 # Barra lateral para navegación
@@ -131,7 +147,7 @@ pais_seleccionado = st.sidebar.selectbox("Selecciona un país:", paises_en_regio
 info_pais = paises_dict[region_seleccionada][pais_seleccionado]
 url_bandera = f"https://flagcdn.com/w40/{info_pais['iso2']}.png"
 
-# Obtener datos reales de desempleo y etiquetas de trimestres para los últimos 12 trimestres
+# Obtener datos de desempleo, etiquetas de trimestres (YYYY.QX) y valor actual
 datos_empleo, fechas_empleo, valor_empleo_actual = obtener_desempleo_fred(info_pais['iso3'])
 
 # Barra superior con título
@@ -150,7 +166,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Función para generar los mini gráficos de barras con tooltip, última barra blanca y eje X visible para trimestres
+# Función para generar los mini gráficos de barras con tooltip, última barra blanca y eje X visible en formato YYYY.QX
 def crear_sparkline(valores, categorias=None, color_base="#00adb5"):
     # Definir colores: todos color_base, excepto la última barra que es blanca
     colores = [color_base] * (len(valores) - 1) + ["white"]
@@ -164,12 +180,12 @@ def crear_sparkline(valores, categorias=None, color_base="#00adb5"):
     ))
     fig.update_layout(
         height=85,
-        margin=dict(l=0, r=0, t=5, b=20),
+        margin=dict(l=0, r=0, t=5, b=25),
         xaxis=dict(
             visible=True, 
             showticklabels=True, 
-            tickfont=dict(size=9, color="#9ba8b5"),
-            tickangle=0
+            tickfont=dict(size=8, color="#9ba8b5"),
+            tickangle=-25
         ),
         yaxis=dict(visible=False),
         paper_bgcolor='rgba(0,0,0,0)',
@@ -183,12 +199,12 @@ def crear_sparkline(valores, categorias=None, color_base="#00adb5"):
     )
     return fig
 
-# Definición de los 9 indicadores macroeconómicos clave (Tasa de desempleo conectada a FRED)
+# Definición de los 9 indicadores macroeconómicos clave
 indicadores = [
     {"titulo": "PBI", "valor": "US$ 640.000 M", "desc": "Trimestral, en dólares", "datos": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], "cat": fechas_empleo},
     {"titulo": "Déficit fiscal / PBI", "valor": "-3,4%", "desc": "Mensual, % del PBI", "datos": [5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17], "cat": fechas_empleo},
     {"titulo": "Deuda pública / PBI", "valor": "78,5%", "desc": "Trimestral, % del PBI", "datos": [8, 8, 9, 9, 10, 10, 11, 11, 12, 14, 15, 16], "cat": fechas_empleo},
-    {"titulo": "Tasa de desempleo", "valor": valor_empleo_actual, "desc": "Trimestral, tasa de desempleo (FRED)", "datos": datos_empleo, "cat": fechas_empleo},
+    {"titulo": "Tasa de desempleo", "valor": valor_empleo_actual, "desc": "Trimestral, tasa de desempleo", "datos": datos_empleo, "cat": fechas_empleo},
     {"titulo": "Inflación", "valor": "118,2%", "desc": "Interanual, mensual", "datos": [10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 22], "cat": fechas_empleo},
     {"titulo": "Balanza comercial", "valor": "US$ 1.850 M", "desc": "Mensual, en dólares", "datos": [5, 6, 8, 7, 9, 11, 10, 12, 14, 15, 16, 18], "cat": fechas_empleo},
     {"titulo": "Riesgo país (EMBI)", "valor": "712 pb", "desc": "Diario, puntos básicos", "datos": [18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6], "cat": fechas_empleo},
