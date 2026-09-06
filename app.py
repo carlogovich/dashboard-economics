@@ -142,12 +142,16 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Función para generar los mini gráficos de barras (sparklines)
-def crear_sparkline(valores, color="#00adb5"):
+# Función para generar los mini gráficos de barras con tooltip y última barra blanca
+def crear_sparkline(valores, color_base="#00adb5"):
+    # Definir colores: todos color_base, excepto la última barra que es blanca
+    colores = [color_base] * (len(valores) - 1) + ["white"]
+    
     fig = go.Figure(go.Bar(
         y=valores,
-        marker_color=color,
-        hoverinfo='none'
+        marker_color=colores,
+        hoverinfo='y',
+        hovertemplate='Valor: %{y}<extra></extra>'
     ))
     fig.update_layout(
         height=65,
@@ -156,11 +160,16 @@ def crear_sparkline(valores, color="#00adb5"):
         yaxis=dict(visible=False),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        bargap=0.15
+        bargap=0.15,
+        hoverlabel=dict(
+            bgcolor="#1e3e62",
+            font_color="white",
+            font_size=12
+        )
     )
     return fig
 
-# Definición de los 9 indicadores macroeconómicos clave (Empleo conectado a FRED, el resto ilustrativo)
+# Definición de los 9 indicadores macroeconómicos clave
 indicadores = [
     {"titulo": "PBI", "valor": "US$ 640.000 M", "desc": "Trimestral, en dólares", "datos": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]},
     {"titulo": "Déficit fiscal / PBI", "valor": "-3,4%", "desc": "Mensual, % del PBI", "datos": [5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17]},
