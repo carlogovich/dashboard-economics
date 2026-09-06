@@ -298,7 +298,7 @@ with col_title:
 
 banner_html = f"""
 <div style="background-color:#1e3e62; padding:5px 15px; border-radius:6px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
-    <img src="{url_bandera}" width="20" style="border-radius:6px; box-shadow:0 1px 2px rgba(0,0,0,0.2);">
+    <img src="{url_bandera}" width="30" style="border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,0.2);">
     <div style="line-height:1.1;">
         <div style="margin:0; color:white; font-size:16px; font-weight:600;">
             {pais_seleccionado}
