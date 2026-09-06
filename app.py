@@ -15,8 +15,8 @@ st.markdown("""
     .metric-card {
         background-color: #1e3e62;
         border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 5px;
+        padding: 12px 15px;
+        margin-bottom: 0px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
     </style>
@@ -85,7 +85,6 @@ FRED_UNEMPLOYMENT_SERIES = {
 
 @st.cache_data
 def obtener_desempleo_fred(iso3):
-    """Consulta FRED o genera una serie histórica consistente con formato YYYY.QX si no hay datos directos."""
     if iso3 not in FRED_UNEMPLOYMENT_SERIES:
         fechas_simuladas = []
         for anio in range(2023, 2026):
@@ -148,16 +147,16 @@ with col_title:
 
 # Banner superior con imagen de la bandera
 st.markdown(f"""
-    <div style="background-color: #1e3e62; padding: 15px; border-radius: 8px; margin-bottom: 25px; display: flex; align-items: center; gap: 15px;">
-        <img src="{url_bandera}" width="40" style="border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <div style="background-color: #1e3e62; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
+        <img src="{url_bandera}" width="35" style="border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
         <div>
             <h4 style="margin:0; color:white;">{pais_seleccionado} <span style="font-size: 14px; color: #9ba8b5;">({info_pais['iso3'].upper()})</span></h4>
-            <p style="margin:0; color:#9ba8b5; font-size: 14px;">Datos conectados a FRED y referencias ilustrativas</p>
+            <p style="margin:0; color:#9ba8b5; font-size: 13px;">Datos conectados a FRED y referencias ilustrativas</p>
         </div>
     </div>
 """, unsafe_allow_html=True)
 
-# Función para generar sparklines más estirados, con etiquetas en una sola línea y tamaño ajustado
+# Función para generar sparklines más compactos (altura reducida a la mitad)
 def crear_sparkline(valores, categorias=None, color_base="#00adb5"):
     colores = [color_base] * (len(valores) - 1) + ["white"]
     
@@ -169,15 +168,15 @@ def crear_sparkline(valores, categorias=None, color_base="#00adb5"):
         hovertemplate='Período: %{x}<br>Valor: %{y}<extra></extra>'
     ))
     fig.update_layout(
-        height=100,  # Gráfico más alto/estirado
-        margin=dict(l=5, r=5, t=0, b=18),
+        height=50,  # Altura reducida a la mitad (de 100 a 50)
+        margin=dict(l=5, r=5, t=0, b=12),
         xaxis=dict(
             visible=True, 
             showticklabels=True, 
-            tickfont=dict(size=8, color="#9ba8b5"),  # Tamaño ajustado para una sola línea
-            tickangle=0  # Etiquetas totalmente horizontales
+            tickfont=dict(size=8, color="#9ba8b5"),
+            tickangle=0
         ),
-        yaxis=dict(visible=False),
+        yaxis=dict(visible=False, rangemode='tozero'),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         bargap=0.15,
@@ -212,8 +211,8 @@ for i in range(0, len(indicadores), 3):
                 st.markdown(f"""
                     <div class="metric-card">
                         <div style="color: #9ba8b5; font-size: 13px; font-weight: 500;">{ind['titulo']}</div>
-                        <div style="color: white; font-size: 24px; font-weight: bold; margin: 4px 0;">{ind['valor']}</div>
-                        <div style="color: #9ba8b5; font-size: 11px; margin-bottom: 8px;">{ind['desc']}</div>
+                        <div style="color: white; font-size: 22px; font-weight: bold; margin: 2px 0;">{ind['valor']}</div>
+                        <div style="color: #9ba8b5; font-size: 11px;">{ind['desc']}</div>
                     </div>
                 """, unsafe_allow_html=True)
                 
