@@ -1,7 +1,6 @@
 import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
-import textwrap
 
 # ============================================================
 # CONFIGURACIÓN GENERAL
@@ -13,25 +12,42 @@ st.set_page_config(
 )
 
 # ============================================================
+# HELPER: aplanar bloques de HTML
+# ------------------------------------------------------------
+# Streamlit interpreta 4+ espacios de indentación al inicio de
+# una línea como "bloque de código" (regla clásica de Markdown),
+# así que cualquier HTML multilínea con sangría se muestra como
+# texto crudo en vez de renderizarse. Esta función quita la
+# indentación de cada línea antes de pasarla a st.markdown.
+# ============================================================
+
+def _html(raw: str) -> str:
+    return "\n".join(line.strip() for line in raw.strip().splitlines())
+
+
+# ============================================================
 # ESTILOS CSS
 # ============================================================
 
-st.markdown("""
-<style>
-.stApp {
-    background-color: #0b192c;
-    color: white;
-}
+st.markdown(
+    _html("""
+    <style>
+    .stApp {
+        background-color: #0b192c;
+        color: white;
+    }
 
-.metric-card {
-    background-color: #1e3e62;
-    border-radius: 10px;
-    padding: 8px 12px;
-    margin-bottom: 0px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-}
-</style>
-""", unsafe_allow_html=True)
+    .metric-card {
+        background-color: #1e3e62;
+        border-radius: 10px;
+        padding: 8px 12px;
+        margin-bottom: 0px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    </style>
+    """),
+    unsafe_allow_html=True
+)
 
 
 # ============================================================
@@ -281,57 +297,21 @@ with col_title:
 # ============================================================
 
 banner_html = f"""
-<div style="
-    background-color: #1e3e62;
-    padding: 5px 10px;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-">
-    <img
-        src="{url_bandera}"
-        width="20"
-        style="
-            border-radius: 2px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        "
-    >
-
-    <div style="line-height: 1.1;">
-
-        <div style="
-            margin: 0;
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-        ">
+<div style="background-color:#1e3e62; padding:5px 10px; border-radius:6px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+    <img src="{url_bandera}" width="20" style="border-radius:2px; box-shadow:0 1px 2px rgba(0,0,0,0.2);">
+    <div style="line-height:1.1;">
+        <div style="margin:0; color:white; font-size:12px; font-weight:600;">
             {pais_seleccionado}
-            <span style="
-                font-size: 9px;
-                color: #9ba8b5;
-            ">
-                ({info_pais["iso3"].upper()})
-            </span>
+            <span style="font-size:9px; color:#9ba8b5;">({info_pais["iso3"].upper()})</span>
         </div>
-
-        <div style="
-            margin: 1px 0 0 0;
-            color: #9ba8b5;
-            font-size: 8px;
-        ">
+        <div style="margin:1px 0 0 0; color:#9ba8b5; font-size:8px;">
             Datos conectados a FRED y referencias ilustrativas
         </div>
-
     </div>
 </div>
 """
 
-st.markdown(
-    textwrap.dedent(banner_html),
-    unsafe_allow_html=True
-)
+st.markdown(_html(banner_html), unsafe_allow_html=True)
 
 
 # ============================================================
@@ -542,49 +522,22 @@ for i in range(0, len(indicadores), 3):
                 # ====================================================
 
                 card_html = f"""
-<div class="metric-card">
-    <div style="
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-    ">
-        <div style="
-            color: #9ba8b5;
-            font-size: 11px;
-            font-weight: 500;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        ">
-            {ind["titulo"]}
-        </div>
+                <div class="metric-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; white-space:nowrap;">
+                        <div style="color:#9ba8b5; font-size:11px; font-weight:500; overflow:hidden; text-overflow:ellipsis;">
+                            {ind["titulo"]}
+                        </div>
+                        <div style="color:white; font-size:16px; font-weight:bold; line-height:1;">
+                            {ind["valor"]}
+                        </div>
+                    </div>
+                    <div style="color:#9ba8b5; font-size:9px; margin-top:3px;">
+                        {ind["desc"]}
+                    </div>
+                </div>
+                """
 
-        <div style="
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            line-height: 1;
-        ">
-            {ind["valor"]}
-        </div>
-    </div>
-
-    <div style="
-        color: #9ba8b5;
-        font-size: 9px;
-        margin-top: 3px;
-    ">
-        {ind["desc"]}
-    </div>
-</div>
-"""
-
-                st.markdown(
-                    textwrap.dedent(card_html),
-                    unsafe_allow_html=True
-                )
-
+                st.markdown(_html(card_html), unsafe_allow_html=True)
 
                 # ====================================================
                 # GRÁFICO
